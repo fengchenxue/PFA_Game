@@ -2,7 +2,7 @@
 #include<sstream>
 
 
-bool Tile::isInView(GamesEngineeringBase::Window& canvas, Player& player)
+bool Tile::isInView(GamesEngineeringBase::Window& canvas, Player& player) const
 {
 	if (Position.x + Texture.width < player.CameraPosition.x || player.CameraPosition.x + canvas.getWidth() < Position.x ||
 		Position.y + Texture.height < player.CameraPosition.y || player.CameraPosition.y + canvas.getHeight() < Position.y) return false;
@@ -40,14 +40,11 @@ void TileSet::load()
 
 }
 
-
-
-
-
-World::World(std::string filename, bool _endless) :endless(_endless)
+void World::initialize(bool _endless)
 {
+	endless = _endless;
 	tilesSet.load();
-	std::ifstream infile(filename);
+	std::ifstream infile("Res/tiles.txt");
 	if (!infile.is_open()) {
 		throw std::runtime_error("Cannot open file");
 	}
@@ -265,7 +262,7 @@ void World::checkCollision(GamesEngineeringBase::Window& canvas, Player& player,
 	}
 }
 
-void World::checkBoundary(GamesEngineeringBase::Window& canvas, Player& player)
+void World::checkBoundary(GamesEngineeringBase::Window& canvas, Player& player) const
 {
 	if (!endless) {
 		player.Position.x = max(player.Position.x, Position.x);
@@ -293,12 +290,30 @@ void World::updatePosition(Player& player)
 	}
 }
 
-bool World::isInView(GamesEngineeringBase::Window& canvas, Player& player, Vec2 _Position)
+
+bool World::isInView(GamesEngineeringBase::Window& canvas, Player& player, Vec2 _Position) const
 {
 	if (_Position.x + tilesWide * tileWidth < player.CameraPosition.x || player.CameraPosition.x + canvas.getWidth() < _Position.x ||
 		_Position.y + tilesHigh * tileHeight < player.CameraPosition.y || player.CameraPosition.y + canvas.getHeight() < _Position.y) return false;
 	return true;
 }
 
+void World::save(std::string filename)
+{
+	std::ofstream file(filename);
+	if (!file.is_open()) {
+		throw std::runtime_error("Cannot open file");
+	}
+	file.write(reinterpret_cast<char*>(&endless), sizeof(endless));
+}
 
-
+void World::load(std::string filename)
+{
+	std::ifstream file(filename);
+	if (!file.is_open()) {
+		throw std::runtime_error("Cannot open file");
+	}
+	bool _endless=false;
+	file.read(reinterpret_cast<char*>(&_endless), sizeof(_endless));
+	initialize(_endless);
+}

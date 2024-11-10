@@ -1,6 +1,6 @@
 #include"Character.h"
 #include<cmath>
-
+#include<fstream>
 void Character::updateAttackProgress(float _dt)
 {
 	attackProgress += _dt;
@@ -25,10 +25,9 @@ bool Character::getDamage(int damage)
 	return false;
 }
 
-
-Player::Player(std::string filename, float PositionX, float PositionY, int _HP, float _MoveSpeed, int _AttackPower, float _collisionRadius, float _attackThreshold, int _AOECount)
+void Player::initialize(float PositionX, float PositionY, int _HP, float _MoveSpeed, int _AttackPower, float _collisionRadius, float _attackThreshold, int _AOECount)
 {
-	Texture.load(filename);
+	Texture.load("Res/cat.png");
 	Position.x = PositionX;
 	Position.y = PositionY;
 	CenterPosition.x = Position.x + static_cast<float>(Texture.width) / 2;
@@ -128,6 +127,64 @@ void Player::spawnBullet(EnemyPool& enemyPool, BulletPool& bulletPool, float _dt
 	}
 }
 
+void Player::save(std::string filename)
+{
+	std::ofstream file(filename,std::ios::binary);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open the file" << std::endl;
+		return;
+	}
+	file.write(reinterpret_cast<char*>(&Position.x), sizeof(Position.x));
+	file.write(reinterpret_cast<char*>(&Position.y), sizeof(Position.y));
+	file.write(reinterpret_cast<char*>(&CameraPosition.x), sizeof(CameraPosition.x));
+	file.write(reinterpret_cast<char*>(&CameraPosition.y), sizeof(CameraPosition.y));
+	file.write(reinterpret_cast<char*>(&CenterPosition.x), sizeof(CenterPosition.x));
+	file.write(reinterpret_cast<char*>(&CenterPosition.y), sizeof(CenterPosition.y));
+	file.write(reinterpret_cast<char*>(&EXP), sizeof(EXP));
+	file.write(reinterpret_cast<char*>(&score), sizeof(score));
+	file.write(reinterpret_cast<char*>(&HP), sizeof(HP));
+	file.write(reinterpret_cast<char*>(&MoveSpeed), sizeof(MoveSpeed));
+	file.write(reinterpret_cast<char*>(&AttackPower), sizeof(AttackPower));
+	file.write(reinterpret_cast<char*>(&collisionRadius), sizeof(collisionRadius));
+	file.write(reinterpret_cast<char*>(&attackProgress), sizeof(attackProgress));
+	file.write(reinterpret_cast<char*>(&attackCooldown), sizeof(attackCooldown));
+	file.write(reinterpret_cast<char*>(&Level), sizeof(Level));
+	file.write(reinterpret_cast<char*>(&AOECount), sizeof(AOECount));
+	file.write(reinterpret_cast<char*>(&AOECoolDown), sizeof(AOECoolDown));
+	file.write(reinterpret_cast<char*>(&AOEProgress), sizeof(AOEProgress));
+	file.close();
+}
+
+void Player::load(std::string filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open the file" << std::endl;
+		return;
+	}
+	Texture.load("Res/cat.png");
+	file.read(reinterpret_cast<char*>(&Position.x), sizeof(Position.x));
+	file.read(reinterpret_cast<char*>(&Position.y), sizeof(Position.y));
+	file.read(reinterpret_cast<char*>(&CameraPosition.x), sizeof(CameraPosition.x));
+	file.read(reinterpret_cast<char*>(&CameraPosition.y), sizeof(CameraPosition.y));
+	file.read(reinterpret_cast<char*>(&CenterPosition.x), sizeof(CenterPosition.x));
+	file.read(reinterpret_cast<char*>(&CenterPosition.y), sizeof(CenterPosition.y));
+	file.read(reinterpret_cast<char*>(&EXP), sizeof(EXP));
+	file.read(reinterpret_cast<char*>(&score), sizeof(score));
+	file.read(reinterpret_cast<char*>(&HP), sizeof(HP));
+	file.read(reinterpret_cast<char*>(&MoveSpeed), sizeof(MoveSpeed));
+	file.read(reinterpret_cast<char*>(&AttackPower), sizeof(AttackPower));
+	file.read(reinterpret_cast<char*>(&collisionRadius), sizeof(collisionRadius));
+	file.read(reinterpret_cast<char*>(&attackProgress), sizeof(attackProgress));
+	file.read(reinterpret_cast<char*>(&attackCooldown), sizeof(attackCooldown));
+	file.read(reinterpret_cast<char*>(&Level), sizeof(Level));
+	file.read(reinterpret_cast<char*>(&AOECount), sizeof(AOECount));
+	file.read(reinterpret_cast<char*>(&AOECoolDown), sizeof(AOECoolDown));
+	file.read(reinterpret_cast<char*>(&AOEProgress), sizeof(AOEProgress));
+	file.close();
+
+}
+
 
 void Enemy::EnemyMovementAndUpdateCenter(Vec2& MoveDirection, float dt)
 {
@@ -138,10 +195,6 @@ void Enemy::EnemyMovementAndUpdateCenter(Vec2& MoveDirection, float dt)
 
 void Enemy::Initialize(unsigned int _EnemyType, float PositionX, float PositionY)
 {
-	Position.x = PositionX;
-	Position.y = PositionY;
-	CenterPosition.x = Position.x + static_cast<float>(Texture.width) / 2;
-	CenterPosition.y = Position.y + static_cast<float>(Texture.height) / 2;
 	EnemyType = _EnemyType;
 	if (EnemyType == 1) {
 		HP = 150;
@@ -188,6 +241,10 @@ void Enemy::Initialize(unsigned int _EnemyType, float PositionX, float PositionY
 		EXP = 50;
 		score = 50;
 	}
+	Position.x = PositionX;
+	Position.y = PositionY;
+	CenterPosition.x = Position.x + static_cast<float>(Texture.width) / 2;
+	CenterPosition.y = Position.y + static_cast<float>(Texture.height) / 2;
 }
 
 
@@ -236,6 +293,7 @@ unsigned int EnemyPool::getEnemyType() const
 
 void EnemyPool::spawnEnemies(GamesEngineeringBase::Window& canvas, float _dt, float currentTime, Player& player)
 {
+	timeoffset_save = currentTime;
 	SpawnProgress += _dt;
 	if (SpawnProgress >= SpawnTimeThreshold_Current) {
 		//calculate the number of enemies to spawn
@@ -245,7 +303,7 @@ void EnemyPool::spawnEnemies(GamesEngineeringBase::Window& canvas, float _dt, fl
 		}
 		//updata the spawn progress
 		SpawnProgress -= spawnCount * SpawnTimeThreshold_Current;
-		SpawnTimeThreshold_Current = SpawnTimeThreshold_Start - (SpawnTimeThreshold_Start - SpawnTimeThreshold_End) * min(1.f, currentTime / targetTime);
+		SpawnTimeThreshold_Current = SpawnTimeThreshold_Start - (SpawnTimeThreshold_Start - SpawnTimeThreshold_End) * min(1.f, (currentTime+timeoffset_load) / targetTime);
 		//std::cout << SpawnTimeThreshold_Current << std::endl;
 	}
 }
@@ -446,6 +504,75 @@ void EnemyPool::findNLargest(size_t N)
 	
 }
 
+void EnemyPool::save(std::string filename)
+{
+	std::ofstream file(filename, std::ios::binary);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open the file" << std::endl;
+		return;
+	}
+	//save spawn parameters
+	file.write(reinterpret_cast<char*>(&SpawnProgress), sizeof(SpawnProgress));
+	file.write(reinterpret_cast<char*>(&SpawnTimeThreshold_Current), sizeof(SpawnTimeThreshold_Current));
+	file.write(reinterpret_cast<char*>(&SpawnTimeThreshold_Start), sizeof(SpawnTimeThreshold_Start));
+	file.write(reinterpret_cast<char*>(&SpawnTimeThreshold_End), sizeof(SpawnTimeThreshold_End));
+	file.write(reinterpret_cast<char*>(&targetTime), sizeof(targetTime));
+	file.write(reinterpret_cast<char*>(&EnemySpawnWeight[1]), sizeof(EnemySpawnWeight[1]));
+	file.write(reinterpret_cast<char*>(&EnemySpawnWeight[2]), sizeof(EnemySpawnWeight[2]));
+	file.write(reinterpret_cast<char*>(&EnemySpawnWeight[3]), sizeof(EnemySpawnWeight[3]));
+	file.write(reinterpret_cast<char*>(&EnemySpawnWeight[4]), sizeof(EnemySpawnWeight[4]));
+	file.write(reinterpret_cast<char*>(&EnemySpawnWeightSum), sizeof(EnemySpawnWeightSum));
+	//save activated enemies in ActivatedEnemies
+	size_t size = ActivatedEnemies.size;
+	file.write(reinterpret_cast<char*>(&size), sizeof(size));
+	for (size_t i = 0; i < size; i++) {
+		file.write(reinterpret_cast<char*>(&ActivatedEnemies[i]->EnemyType), sizeof(ActivatedEnemies[i]->EnemyType));
+		file.write(reinterpret_cast<char*>(&ActivatedEnemies[i]->Position.x), sizeof(ActivatedEnemies[i]->Position.x));
+		file.write(reinterpret_cast<char*>(&ActivatedEnemies[i]->Position.y), sizeof(ActivatedEnemies[i]->Position.y));
+		file.write(reinterpret_cast<char*>(&ActivatedEnemies[i]->HP), sizeof(ActivatedEnemies[i]->HP));
+		file.write(reinterpret_cast<char*>(&ActivatedEnemies[i]->attackProgress), sizeof(ActivatedEnemies[i]->attackProgress));
+	}
+	file.write(reinterpret_cast<char*>(&timeoffset_save), sizeof(timeoffset_save));
+	file.close();
+}
+
+void EnemyPool::load(std::string filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open the file" << std::endl;
+		return;
+	}
+	//load spawn parameters
+	file.read(reinterpret_cast<char*>(&SpawnProgress), sizeof(SpawnProgress));
+	file.read(reinterpret_cast<char*>(&SpawnTimeThreshold_Current), sizeof(SpawnTimeThreshold_Current));
+	file.read(reinterpret_cast<char*>(&SpawnTimeThreshold_Start), sizeof(SpawnTimeThreshold_Start));
+	file.read(reinterpret_cast<char*>(&SpawnTimeThreshold_End), sizeof(SpawnTimeThreshold_End));
+	file.read(reinterpret_cast<char*>(&targetTime), sizeof(targetTime));
+	file.read(reinterpret_cast<char*>(&EnemySpawnWeight[1]), sizeof(EnemySpawnWeight[1]));
+	file.read(reinterpret_cast<char*>(&EnemySpawnWeight[2]), sizeof(EnemySpawnWeight[2]));
+	file.read(reinterpret_cast<char*>(&EnemySpawnWeight[3]), sizeof(EnemySpawnWeight[3]));
+	file.read(reinterpret_cast<char*>(&EnemySpawnWeight[4]), sizeof(EnemySpawnWeight[4]));
+	file.read(reinterpret_cast<char*>(&EnemySpawnWeightSum), sizeof(EnemySpawnWeightSum));
+	//load activated enemies in ActivatedEnemies
+	size_t size=0;
+	file.read(reinterpret_cast<char*>(&size), sizeof(size));
+	unsigned int newEnemyType = 0;
+	Vec2 newPosition = { 0,0 };
+	for (size_t i = 0; i < size; i++) {
+		Enemy* newEnemy = InactivatedEnemies.acquire();
+		file.read(reinterpret_cast<char*>(&newEnemyType), sizeof(newEnemyType));
+		file.read(reinterpret_cast<char*>(&newPosition.x), sizeof(newPosition.x));
+		file.read(reinterpret_cast<char*>(&newPosition.y), sizeof(newPosition.y));
+		newEnemy->Initialize(newEnemyType, newPosition.x, newPosition.y);
+		file.read(reinterpret_cast<char*>(&newEnemy->HP), sizeof(newEnemy->HP));
+		file.read(reinterpret_cast<char*>(&newEnemy->attackProgress), sizeof(newEnemy->attackProgress));
+		ActivatedEnemies.push_back(newEnemy);
+	}
+	file.read(reinterpret_cast<char*>(&timeoffset_load), sizeof(timeoffset_load));
+	file.close();
+}
+
 
 void Bullet::Initialize(Vec2& Position, Vec2& Direction, int _AttackPower, bool _isPlayer)
 {
@@ -554,4 +681,79 @@ void BulletPool::draw(GamesEngineeringBase::Window& canvas, Player& player)
 	for (size_t i = 0; i < PlayerBullets.size; i++) {
 		PlayerBullets.Data[i]->draw(canvas, player);
 	}
+}
+
+void BulletPool::save(std::string filename)
+{
+	std::ofstream file(filename, std::ios::binary);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open the file" << std::endl;
+		return;
+	}
+	//save the bullets in EnemyBullets
+	size_t size = EnemyBullets.size;
+	file.write(reinterpret_cast<char*>(&size), sizeof(size));
+	for (size_t i = 0; i < size; i++) {
+		file.write(reinterpret_cast<char*>(&EnemyBullets[i]->CenterPosition.x), sizeof(EnemyBullets[i]->CenterPosition.x));
+		file.write(reinterpret_cast<char*>(&EnemyBullets[i]->CenterPosition.y), sizeof(EnemyBullets[i]->CenterPosition.y));
+		file.write(reinterpret_cast<char*>(&EnemyBullets[i]->MoveDirection.x), sizeof(EnemyBullets[i]->MoveDirection.x));
+		file.write(reinterpret_cast<char*>(&EnemyBullets[i]->MoveDirection.y), sizeof(EnemyBullets[i]->MoveDirection.y));
+		file.write(reinterpret_cast<char*>(&EnemyBullets[i]->AttackPower), sizeof(EnemyBullets[i]->AttackPower));
+		file.write(reinterpret_cast<char*>(&EnemyBullets[i]->lifeProgress), sizeof(EnemyBullets[i]->lifeProgress));
+	}
+	//save the bullets in PlayerBullets
+	size = PlayerBullets.size;
+	file.write(reinterpret_cast<char*>(&size), sizeof(size));
+	for (size_t i = 0; i < size; i++) {
+		file.write(reinterpret_cast<char*>(&PlayerBullets[i]->CenterPosition.x), sizeof(PlayerBullets[i]->CenterPosition.x));
+		file.write(reinterpret_cast<char*>(&PlayerBullets[i]->CenterPosition.y), sizeof(PlayerBullets[i]->CenterPosition.y));
+		file.write(reinterpret_cast<char*>(&PlayerBullets[i]->MoveDirection.x), sizeof(PlayerBullets[i]->MoveDirection.x));
+		file.write(reinterpret_cast<char*>(&PlayerBullets[i]->MoveDirection.y), sizeof(PlayerBullets[i]->MoveDirection.y));
+		file.write(reinterpret_cast<char*>(&PlayerBullets[i]->AttackPower), sizeof(PlayerBullets[i]->AttackPower));
+		file.write(reinterpret_cast<char*>(&PlayerBullets[i]->lifeProgress), sizeof(PlayerBullets[i]->lifeProgress));
+	}
+	file.close();
+}
+
+void BulletPool::load(std::string filename)
+{
+	std::ifstream file(filename, std::ios::binary);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open the file" << std::endl;
+		return;
+	}
+	//load the number of bullets
+	size_t size = 0;
+	file.read(reinterpret_cast<char*>(&size), sizeof(size));
+	//load the bullets in EnemyBullets
+	Vec2 Position = { 0,0 };
+	Vec2 Direction = { 0,0 };
+	int AttackPower = 0;
+	for (size_t i = 0; i < size; i++) {
+		Bullet* newBullet = InactivatedBullets.acquire();
+		file.read(reinterpret_cast<char*>(&Position.x), sizeof(Position.x));
+		file.read(reinterpret_cast<char*>(&Position.y), sizeof(Position.y));
+		file.read(reinterpret_cast<char*>(&Direction.x), sizeof(Direction.x));
+		file.read(reinterpret_cast<char*>(&Direction.y), sizeof(Direction.y));
+		file.read(reinterpret_cast<char*>(&AttackPower), sizeof(AttackPower));
+		newBullet->Initialize(Position, Direction, AttackPower, false);
+		file.read(reinterpret_cast<char*>(&newBullet->lifeProgress), sizeof(newBullet->lifeProgress));
+		EnemyBullets.push_back(newBullet);
+	}
+	//load the number of bullets
+	size = 0;
+	file.read(reinterpret_cast<char*>(&size), sizeof(size));
+	//load the bullets in PlayerBullets
+	for (size_t i = 0; i < size; i++) {
+		Bullet* newBullet = InactivatedBullets.acquire();
+		file.read(reinterpret_cast<char*>(&Position.x), sizeof(Position.x));
+		file.read(reinterpret_cast<char*>(&Position.y), sizeof(Position.y));
+		file.read(reinterpret_cast<char*>(&Direction.x), sizeof(Direction.x));
+		file.read(reinterpret_cast<char*>(&Direction.y), sizeof(Direction.y));
+		file.read(reinterpret_cast<char*>(&AttackPower), sizeof(AttackPower));
+		newBullet->Initialize(Position, Direction, AttackPower, true);
+		file.read(reinterpret_cast<char*>(&newBullet->lifeProgress), sizeof(newBullet->lifeProgress));
+		PlayerBullets.push_back(newBullet);
+	}
+	file.close();
 }

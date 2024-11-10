@@ -7,21 +7,64 @@
 constexpr int ScreenWidth = 1280;
 constexpr int ScreenHeight = 720;
 
+//Because atexit() can only assignedwith a function with no parameters, we need to use global variables to store data
+//Because the player and world have image, we need to initialize them after the window is created
+//But we can initialize enemyPool and bulletPool before the window is created
+Player player;
+EnemyPool enemyPool(90.f, 2.0f, 0.5f, 10, 2, 4, 1);
+BulletPool bulletPool;
+World world;
+void saveGame() {
+	player.save("Res/Player.dat");
+	enemyPool.save("Res/Enemy.dat");
+	bulletPool.save("Res/Bullet.dat");
+	world.save("Res/World.dat");
+}
+
 int main() {
-	//create a window
+    //create a window
     GamesEngineeringBase::Window canvas;
-    canvas.create(ScreenWidth,ScreenHeight, "PFAGame");
-    
+    canvas.create(ScreenWidth, ScreenHeight, "PFAGame");
+
+	//save game when exit
+	atexit(saveGame);
+    //select map mode
+    int mode;
+    bool endless;
+    while (true) {
+		system("cls");
+        std::cout << "input a number:1. for normal mode 2. for endless mode 3. load game\n";
+        std::cin >> mode;
+        switch (mode)
+        {
+        case 1:
+            endless = false;
+			//Because the player's and tiles' images can only be loaded after the window is created
+			//We initialize the player and world at this moment after the window is created
+            player.initialize(800.f, 800.f, 100, 200.f, 100, 28.f, 1.f, 2);
+			world.initialize(endless);
+            break;
+        case 2:
+            endless = true;
+            player.initialize(800.f, 800.f, 100, 200.f, 100, 28.f, 1.f, 2);
+            world.initialize(endless);
+            break;
+        case 3:
+			player.load("Res/Player.dat");
+			enemyPool.load("Res/Enemy.dat");
+			bulletPool.load("Res/Bullet.dat");
+			world.load("Res/World.dat");
+            break;
+        default:
+            break;
+        }
+        if (mode>=1&&mode<=3) break;
+    }
+
 	//initial random seed
 	srand(static_cast<unsigned int>(time(0)));
-
-	//Initial Map
-	bool endless = true;
-	World world("Res/tiles.txt", endless);
-
-	//Initial Player
-    //constructor: Player(std::string filename, float PositionX, float PositionY, int _HP, float _MoveSpeed, int _AttackPower, float _collisionRadius, float _attackThreshold, int _AOECount);
-	Player player("Res/cat.png",800.f,800.f,100, 200.f, 100,28.f,1.f,2);
+	
+	//update the camera and center of the player
 	player.updateCameraAndCenter(canvas);
     Vec2 PlayerDirection;
 
@@ -30,11 +73,6 @@ int main() {
     int FPS = 0;
 	float dt = 0.f;
 
-	//Initial EnemyPool and BulletPool
-    //constructor : EnemyPool(float _targetTime, float _thresholdStart, float _thresholdEnd, int weight1,int weight2,int weight3,int weight4)
-    EnemyPool enemyPool(90.f, 2.0f, 0.5f,10,2,4,1);
-    BulletPool bulletPool;
-
     //program loop
     bool running = true;
     while (running)
@@ -42,6 +80,7 @@ int main() {
         canvas.clear();
         canvas.checkInput();
         if (canvas.keyPressed(VK_ESCAPE)) break;
+		if (player.HP <= 0) break;
 
         //timer and FPS
         dt = timer.dt();
@@ -87,6 +126,7 @@ int main() {
         //------spawn new enemies-------------------
         enemyPool.spawnEnemies(canvas, dt, timer.getCurrentTime(), player);
 
+
 		//draw map
 		world.draw(canvas, player);
 		//draw player
@@ -95,6 +135,18 @@ int main() {
 		enemyPool.draw(canvas,player);
 		//draw bullets
 		bulletPool.draw(canvas,player);
+
+		//show FPS and other information
+		system("cls");
+        std::cout << "FPS:" << FPS << std::endl;
+		std::cout << "Score:" << player.score << std::endl;
+		std::cout << "Enemies:" << enemyPool.ActivatedEnemies.size << std::endl;
+        std::cout << "HP:" << player.HP <<std::endl;
+        std::cout << "Level:" << player.Level << std::endl; 
+        std::cout << "Attack Interval:" << player.attackCooldown << std::endl;
+        std::cout<< "AOECount:" << player.AOECount << std::endl<<std::endl;
+		if (player.AOEProgress >= player.AOECoolDown) std::cout << "AOE Ready" << std::endl;
+		else std::cout << "AOE not ready"<< std::endl;
 
         canvas.present();
     }

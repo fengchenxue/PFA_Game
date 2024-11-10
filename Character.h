@@ -45,9 +45,9 @@ public:
 	int AOECount = 2;
 	float AOECoolDown = 10.f;
 	float AOEProgress = 10.f;
-
-	Player(std::string filename, float PositionX, float PositionY, int _HP, float _MoveSpeed, int _AttackPower, float _collisionRadius, float _attackThreshold, int _AOECount);
 	
+	void initialize(float PositionX, float PositionY, int _HP, float _MoveSpeed, int _AttackPower, float _collisionRadius, float _attackThreshold, int _AOECount);
+
 	void updateAttackProgress(float _dt);
 	//return true if the player can use AOE
 	bool canAOE();
@@ -68,6 +68,10 @@ public:
 
 	//spawn bullets towards the nearest enemy
 	void spawnBullet(EnemyPool& enemyPool,BulletPool& bulletPool, float _dt);
+
+	void save(std::string filename);
+
+	void load(std::string filename);
 
 };
 
@@ -113,6 +117,9 @@ public:
 	//these variables are used to calculate the type of enemies to spawn
 	int EnemySpawnWeight[5] = { 0 };
 	int EnemySpawnWeightSum = 0;
+	//timeoffset is used to calculate the time difference between the current time and the time when the game was saved
+	float timeoffset_load = 0.f;
+	float timeoffset_save = 0.f;
 
 	//When constructing the EmemyPool, configure enemy spawn parameters
 	EnemyPool(float _targetTime, float _thresholdStart, float _thresholdEnd, int weight1,int weight2,int weight3,int weight4) :
@@ -154,6 +161,8 @@ public:
 	void heapify(size_t i, size_t size); 
 	void findNLargest(size_t N);
 
+	void save(std::string filename);
+	void load(std::string filename);
 };
 
 class Bullet {
@@ -201,4 +210,7 @@ public:
 	void releaseBullet(bool isPlayer, Bullet * bullet);
 
 	void draw(GamesEngineeringBase::Window& canvas,Player&player);
+
+	void save(std::string filename);
+	void load(std::string filename);
 };
