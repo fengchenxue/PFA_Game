@@ -22,6 +22,7 @@ void saveGame() {
 }
 
 int main() {
+
     //create a window
     GamesEngineeringBase::Window canvas;
     canvas.create(ScreenWidth, ScreenHeight, "PFAGame");

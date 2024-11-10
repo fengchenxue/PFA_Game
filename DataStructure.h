@@ -35,8 +35,8 @@ public:
 	size_t size;
 	size_t capacity;
 
-	//Because the size of the vector depends on the number of enemies, the default capacity is 128
-	myVector(size_t _capacity = 128) :Data(nullptr), size(0), capacity(_capacity) {
+	//Because the size of the vector depends on the number of enemies, the default capacity is 64
+	myVector(size_t _capacity = 64) :Data(nullptr), size(0), capacity(_capacity) {
 		Data = new T * [capacity];
 	}
 	~myVector() {
