@@ -27,7 +27,7 @@ public:
 	void clear();
 };
 
-//This class is used to store the enemies in Enemypool
+//This class is used to store the enemies in Enemypool, bullets in bulletpool, and the tiles in the tilemap
 template<class T>
 class myVector {
 public:
@@ -35,7 +35,9 @@ public:
 	size_t size;
 	size_t capacity;
 
-	//Because the size of the vector depends on the number of enemies, the default capacity is 64
+	//Because the capacity of the vector depends on the number of enemies and bullets, 
+	// I think the number of enemies or bullets present at the same time will not exceed 64,
+	//so I set the default capacity to 64
 	myVector(size_t _capacity = 64) :Data(nullptr), size(0), capacity(_capacity) {
 		Data = new T * [capacity];
 	}
@@ -81,7 +83,6 @@ public:
 				Data[index] = Data[--size];
 				return temp;
 			}
-
 		}
 		else throw std::runtime_error("Out of range");
 	}
@@ -102,8 +103,6 @@ public:
 	}
 
 	//find the element in the vector and return the index
-
-
 	size_t find(T* Element) {
 		//std::cout << "Element:" << Element << std::endl;
 		for (size_t i = 0; i < size; i++) {
@@ -112,5 +111,4 @@ public:
 		}
 		throw std::runtime_error("Not found");
 	}
-
 };
